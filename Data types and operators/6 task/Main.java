@@ -51,6 +51,7 @@ public class Main {
         // Пример: автораспаковка значения null вызывает NullPointerException
         Integer value = null; // Объект-оболочка инициализирован null
         try {
+            @SuppressWarnings("null")
             int primitive = value; // Попытка автораспаковки null в примитивный тип
             System.out.println(primitive);
         } catch (NullPointerException e) {

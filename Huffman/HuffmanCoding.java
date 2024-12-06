@@ -82,6 +82,7 @@ public class HuffmanCoding {
             }
         } else if (operation.equals("decode")) {
             try (ObjectInputStream ois = new ObjectInputStream(new FileInputStream(inputFilePath))) {
+                @SuppressWarnings("unchecked")
                 Map<Character, String> huffmanCodeMap = (Map<Character, String>) ois.readObject();
                 String encodedText = (String) ois.readObject();
 

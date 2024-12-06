@@ -2,10 +2,12 @@ public class Main {
     public static void main(String[] args) {
         while (true) {
             System.out.println("Бесконечный цикл while");
+            break;
         }
         
         do {
             System.out.println("Бесконечный цикл do-while");
+            break;
         } while (true);
 
         int[] arr = {1, 3, 5, 7, 9};

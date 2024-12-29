@@ -4,36 +4,36 @@ import java.nio.file.Paths;
 import java.util.*;
 
 public class HuffmanCoding {
-    private Map<Character, String> huffmanCodeMap = new HashMap<>();
+    private Map<Byte, String> huffmanCodeMap = new HashMap<>();
     private PriorityQueue<Node> priorityQueue;
 
-    public void buildHuffmanTree(String text) {
-        Map<Character, Integer> frequencyMap = new HashMap<>();
-        for (char character : text.toCharArray()) {
-            frequencyMap.put(character, frequencyMap.getOrDefault(character, 0) + 1);
+    public void buildHuffmanTree(byte[] data) {
+        Map<Byte, Integer> frequencyMap = new HashMap<>();
+        for (byte b : data) {
+            frequencyMap.put(b, frequencyMap.getOrDefault(b, 0) + 1);
         }
 
         priorityQueue = new PriorityQueue<>(Comparator.comparingInt(node -> node.frequency));
 
-        for (Map.Entry<Character, Integer> entry : frequencyMap.entrySet()) {
+        for (Map.Entry<Byte, Integer> entry : frequencyMap.entrySet()) {
             priorityQueue.add(new Node(entry.getKey(), entry.getValue()));
         }
 
         while (priorityQueue.size() > 1) {
             Node left = priorityQueue.poll();
             Node right = priorityQueue.poll();
-            Node parent = new Node('0', left.frequency + right.frequency);
+            Node parent = new Node((byte) 0, left.frequency + right.frequency);
             parent.left = left;
             parent.right = right;
             priorityQueue.add(parent);
         }
+
         generateHuffmanCodes(priorityQueue.peek(), "");
     }
 
-
     private void generateHuffmanCodes(Node node, String code) {
         if (node.left == null && node.right == null) {
-            if (code.isEmpty()){
+            if (code.isEmpty()) {
                 huffmanCodeMap.put(node.character, "0");
                 return;
             }
@@ -48,15 +48,15 @@ public class HuffmanCoding {
         }
     }
 
-    public String encode(String text) {
+    public String encode(byte[] data) {
         StringBuilder encodedString = new StringBuilder();
-        for (char character : text.toCharArray()) {
-            encodedString.append(huffmanCodeMap.get(character));
+        for (byte b : data) {
+            encodedString.append(huffmanCodeMap.get(b));
         }
         return encodedString.toString();
     }
 
-    public Map<Character, String> getHuffmanCodeMap() {
+    public Map<Byte, String> getHuffmanCodeMap() {
         return huffmanCodeMap;
     }
 
@@ -71,10 +71,10 @@ public class HuffmanCoding {
         String outputFilePath = args[2];
 
         if (operation.equals("encode")) {
-            String text = new String(Files.readAllBytes(Paths.get(inputFilePath)));
+            byte[] data = Files.readAllBytes(Paths.get(inputFilePath));
             HuffmanCoding huffmanCoding = new HuffmanCoding();
-            huffmanCoding.buildHuffmanTree(text);
-            String encodedText = huffmanCoding.encode(text);
+            huffmanCoding.buildHuffmanTree(data);
+            String encodedText = huffmanCoding.encode(data);
 
             try (ObjectOutputStream oos = new ObjectOutputStream(new FileOutputStream(outputFilePath))) {
                 oos.writeObject(huffmanCoding.getHuffmanCodeMap());
@@ -83,39 +83,44 @@ public class HuffmanCoding {
         } else if (operation.equals("decode")) {
             try (ObjectInputStream ois = new ObjectInputStream(new FileInputStream(inputFilePath))) {
                 @SuppressWarnings("unchecked")
-                Map<Character, String> huffmanCodeMap = (Map<Character, String>) ois.readObject();
+                Map<Byte, String> huffmanCodeMap = (Map<Byte, String>) ois.readObject();
                 String encodedText = (String) ois.readObject();
 
-                StringBuilder decodedString = new StringBuilder();
-                String temp = "";
+                Map<String, Byte> reverseHuffmanCodeMap = new HashMap<>();
+                for (Map.Entry<Byte, String> entry : huffmanCodeMap.entrySet()) {
+                    reverseHuffmanCodeMap.put(entry.getValue(), entry.getKey());
+                }
+
+                List<Byte> decodedBytes = new ArrayList<>();
+                StringBuilder temp = new StringBuilder();
                 for (char bit : encodedText.toCharArray()) {
-                    temp += bit;
-                    for (Map.Entry<Character, String> entry : huffmanCodeMap.entrySet()) {
-                        if (entry.getValue().equals(temp)) {
-                            decodedString.append(entry.getKey());
-                            temp = "";
-                            break;
-                        }
+                    temp.append(bit);
+                    if (reverseHuffmanCodeMap.containsKey(temp.toString())) {
+                        decodedBytes.add(reverseHuffmanCodeMap.get(temp.toString()));
+                        temp.setLength(0);
                     }
                 }
 
-                try (BufferedWriter writer = new BufferedWriter(new FileWriter(outputFilePath))) {
-                    writer.write(decodedString.toString());
+                byte[] decodedData = new byte[decodedBytes.size()];
+                for (int i = 0; i < decodedBytes.size(); i++) {
+                    decodedData[i] = decodedBytes.get(i);
+                }
+
+                try (FileOutputStream fos = new FileOutputStream(outputFilePath)) {
+                    fos.write(decodedData);
                 }
             }
         }
     }
 }
 
-
-
 class Node {
     int frequency;
-    char character;
+    byte character;
     Node left;
     Node right;
 
-    Node(char character, int frequency) {
+    Node(byte character, int frequency) {
         this.character = character;
         this.frequency = frequency;
     }
